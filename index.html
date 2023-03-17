@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAREFAS</title>
+</head>
+
+<body>
+    <h1>LISTA DE TAREFAS</h1>
+    
+    <div id="app">
+        <div v-if="load">Aguarde, carregando...</div>
+
+        <table style="margin-top: 2em;">
+            <thead>
+                <tr>
+                    <th>TÍTULO</th>
+                    <!--<th>DESCRIÇÃO</th>-->
+                    <th>DATA</th>
+                    <th>DATA DE CONCLUSÃO</th>
+                    <th>STATUS</th>
+                    <th>SELECIONE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(tarefa, i) in tarefas">
+                    <td>
+                        {{++i}}. {{tarefa.titulo}}
+                    </td>
+                    <!--<td>{{tarefa.descricao}}</td>-->
+                    <td>{{tarefa.data}}</td>
+                    <td>{{tarefa.data_conclusao}}</td>
+                    <td>{{tarefa.status}}</td>
+                    <td>
+                        <div v-if="tarefa.loadChecked">Carregando...</div>
+                        <input
+                            v-if="!tarefa.loadChecked"
+                            :id="'status_'+tarefa.id"
+                            :checked="tarefa.status === 'CONCLUÍDO'" 
+                            type="checkbox" 
+                            @click="mudarStatusParaConcluido(tarefa.id)"
+                        />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        
+        const baseUrl = 'http://localhost:8001/api';       
+
+        new Vue({
+            el: '#app',
+            data: {
+                tarefas:[],
+                load: false,
+                loadChecked: false
+            },
+
+            created(){
+                this.carregarTarefas();
+            },
+
+            methods:{
+                carregarTarefas() {
+                    this.load = true;
+
+                    axios.get(baseUrl+'/tarefas')
+                    .then(response => {
+                        this.tarefas = response.data.map(tarefa => ({...tarefa,loadChecked: false}));
+                    })
+                    .finally(() => {
+                        this.load = false;
+                    })
+                },
+
+                mudarStatusParaConcluido(idTarefa){
+                    this.loadChecked = true;
+
+                    //verifica se o checkbox está marcado
+                    let status = document.getElementById('status_'+idTarefa).checked;
+
+                    axios.post(baseUrl+'/tarefa/status/update', {
+                        id: idTarefa,
+                        status: status
+                    })
+                    .then(response => {
+                        
+                        this.carregarTarefas();
+                    })
+                    .finally(() => {
+                        this.loadChecked = false;
+                    })
+
+
+
+                }
+
+            }
+
+        })
+
+    </script>
+</body>
+
+</html>
